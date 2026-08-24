@@ -13,19 +13,21 @@ export function useApiClient() {
     ): Promise<T> => {
       const token = await getToken();
 
+      const headers = new Headers(options.headers);
+
+      if (!(options.body instanceof FormData)) {
+        headers.set("Content-Type", "application/json");
+      }
+
+      if (token) {
+        headers.set("Authorization", `Bearer ${token}`);
+      }
+
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL}${path}`,
         {
           ...options,
-          headers: {
-            "Content-Type": "application/json",
-            ...(token
-              ? {
-                  Authorization: `Bearer ${token}`,
-                }
-              : {}),
-            ...options.headers,
-          },
+          headers,
         },
       );
 

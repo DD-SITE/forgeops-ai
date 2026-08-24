@@ -17,6 +17,29 @@ class Settings(BaseSettings):
     clerk_secret_key: str
     clerk_authorized_parties: str = "http://localhost:3000"
 
+    s3_endpoint: str
+    s3_region: str = "us-east-1"
+    s3_access_key: str
+    s3_secret_key: str
+    s3_bucket: str = "forgeops-documents"
+    s3_presigned_url_expire_seconds: int = 900
+
+    max_upload_size_bytes: int = 25 * 1024 * 1024
+
+    embedding_model_name: str = "BAAI/bge-small-en-v1.5"
+    embedding_dimension: int = 384
+
+    gemini_api_key: str
+    gemini_model: str = "gemini-3.6-flash"
+
+    ingestion_queue_name: str = "forgeops:ingestion"
+    worker_poll_timeout_seconds: int = 5
+    worker_recovery_interval_seconds: int = 10
+    worker_stale_job_seconds: int = 600
+    worker_max_attempts: int = 3
+    worker_retry_base_delay_seconds: int = 10
+    worker_chunk_batch_size: int = 64
+
     model_config = SettingsConfigDict(
         env_file="../../.env",
         env_file_encoding="utf-8",
