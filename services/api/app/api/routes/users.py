@@ -1,8 +1,6 @@
 from fastapi import APIRouter
 
 from app.auth.current_user import CurrentUser
-from app.schemas.workspace import WorkspaceMembershipResponse
-
 
 router = APIRouter(
     prefix="/me",

@@ -12,7 +12,6 @@ from pathlib import Path
 
 import httpx
 
-
 API_URL = os.environ.get("API_URL", "http://localhost:8000")
 WORKSPACE_ID = os.environ["WORKSPACE_ID"]
 TOKEN = os.environ.get("CLERK_SESSION_TOKEN", "")

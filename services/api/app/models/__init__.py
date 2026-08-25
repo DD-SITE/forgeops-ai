@@ -16,9 +16,14 @@ from app.models.workspace_member import (
 )
 
 __all__ = [
+    "AgentAction",
+    "AgentActionStatus",
+    "AgentRun",
+    "AgentRunStatus",
+    "AuditLog",
     "Document",
-    "DocumentStatus",
     "DocumentChunk",
+    "DocumentStatus",
     "DocumentVersion",
     "DocumentVersionStatus",
     "IngestionJob",
@@ -27,10 +32,11 @@ __all__ = [
     "Workspace",
     "WorkspaceMember",
     "WorkspaceRole",
-    "AgentAction",
-    "AgentActionStatus",
-    "AgentRun",
-    "AgentRunStatus",
-    "AuditLog",
 ]
-from app.models.agent_run import AgentAction, AgentActionStatus, AgentRun, AgentRunStatus, AuditLog
+from app.models.agent_run import (
+    AgentAction,
+    AgentActionStatus,
+    AgentRun,
+    AgentRunStatus,
+    AuditLog,
+)

@@ -5,17 +5,17 @@ Revises: 17d155e8bb8b
 Create Date: 2026-08-21 13:34:53.589092
 
 """
-from typing import Sequence, Union
+from collections.abc import Sequence
 
-from alembic import op
 import sqlalchemy as sa
 
+from alembic import op
 
 # revision identifiers, used by Alembic.
 revision: str = '708b967de978'
-down_revision: Union[str, Sequence[str], None] = '17d155e8bb8b'
-branch_labels: Union[str, Sequence[str], None] = None
-depends_on: Union[str, Sequence[str], None] = None
+down_revision: str | Sequence[str] | None = '17d155e8bb8b'
+branch_labels: str | Sequence[str] | None = None
+depends_on: str | Sequence[str] | None = None
 
 
 def upgrade() -> None:

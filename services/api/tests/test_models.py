@@ -48,9 +48,7 @@ async def test_create_user_workspace_and_membership(
     assert membership.id is not None
     assert membership.role == WorkspaceRole.OWNER
 
-    result = await db_session.execute(
-        select(User).where(User.id == user.id)
-    )
+    result = await db_session.execute(select(User).where(User.id == user.id))
 
     loaded_user = result.scalar_one()
 

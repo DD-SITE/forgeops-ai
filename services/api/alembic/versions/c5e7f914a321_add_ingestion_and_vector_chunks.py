@@ -6,18 +6,18 @@ Create Date: 2026-08-21
 
 """
 
-from typing import Sequence, Union
+from collections.abc import Sequence
 
 import sqlalchemy as sa
-from alembic import op
 from pgvector.sqlalchemy import VECTOR
 from sqlalchemy.dialects.postgresql import ENUM
 
+from alembic import op
 
 revision: str = "c5e7f914a321"
-down_revision: Union[str, Sequence[str], None] = "b31d0a1f9e22"
-branch_labels: Union[str, Sequence[str], None] = None
-depends_on: Union[str, Sequence[str], None] = None
+down_revision: str | Sequence[str] | None = "b31d0a1f9e22"
+branch_labels: str | Sequence[str] | None = None
+depends_on: str | Sequence[str] | None = None
 
 
 def upgrade() -> None:

@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from uuid import UUID
 
 from sqlalchemy import delete, select
@@ -29,18 +29,14 @@ class IngestionRepository:
         *,
         for_update: bool = False,
     ) -> IngestionJob | None:
-        query = select(
-            IngestionJob
-        ).where(
+        query = select(IngestionJob).where(
             IngestionJob.id == job_id,
         )
 
         if for_update:
             query = query.with_for_update()
 
-        result = await self.session.execute(
-            query
-        )
+        result = await self.session.execute(query)
 
         return result.scalar_one_or_none()
 
@@ -50,8 +46,7 @@ class IngestionRepository:
     ) -> IngestionJob | None:
         result = await self.session.execute(
             select(IngestionJob).where(
-                IngestionJob.document_version_id
-                == document_version_id,
+                IngestionJob.document_version_id == document_version_id,
             )
         )
 
@@ -97,9 +92,7 @@ class IngestionRepository:
 
         job.status = IngestionJobStatus.PROCESSING
         job.attempt_count += 1
-        job.started_at = datetime.now(
-            timezone.utc
-        )
+        job.started_at = datetime.now(UTC)
 
         await self.session.commit()
 
@@ -111,8 +104,7 @@ class IngestionRepository:
     ) -> DocumentVersion | None:
         result = await self.session.execute(
             select(DocumentVersion).where(
-                DocumentVersion.id
-                == document_version_id,
+                DocumentVersion.id == document_version_id,
             )
         )
 
@@ -124,21 +116,16 @@ class IngestionRepository:
     ) -> None:
         result = await self.session.execute(
             select(Document).where(
-                Document.id
-                == document_version.document_id,
+                Document.id == document_version.document_id,
             )
         )
 
         document = result.scalar_one_or_none()
 
         if document is not None:
-            document.status = (
-                DocumentStatus.PROCESSING
-            )
+            document.status = DocumentStatus.PROCESSING
 
-        document_version.status = (
-            DocumentVersionStatus.PROCESSING
-        )
+        document_version.status = DocumentVersionStatus.PROCESSING
 
         await self.session.commit()
 
@@ -150,8 +137,7 @@ class IngestionRepository:
     ) -> None:
         await self.session.execute(
             delete(DocumentChunk).where(
-                DocumentChunk.document_version_id
-                == document_version.id,
+                DocumentChunk.document_version_id == document_version.id,
             )
         )
 
@@ -159,16 +145,13 @@ class IngestionRepository:
 
         document_result = await self.session.execute(
             select(Document).where(
-                Document.id
-                == document_version.document_id,
+                Document.id == document_version.document_id,
             )
         )
 
         document = document_result.scalar_one()
 
-        document_version.status = (
-            DocumentVersionStatus.READY
-        )
+        document_version.status = DocumentVersionStatus.READY
 
         document.status = DocumentStatus.READY
 
@@ -179,9 +162,7 @@ class IngestionRepository:
         job: IngestionJob,
     ) -> None:
         job.status = IngestionJobStatus.COMPLETED
-        job.completed_at = datetime.now(
-            timezone.utc
-        )
+        job.completed_at = datetime.now(UTC)
         job.last_error = None
 
         await self.session.commit()
@@ -202,33 +183,22 @@ class IngestionRepository:
         else:
             job.status = IngestionJobStatus.FAILED
 
-            document_version = (
-                await self.get_document_version(
-                    job.document_version_id,
-                )
+            document_version = await self.get_document_version(
+                job.document_version_id,
             )
 
             if document_version is not None:
-                document_version.status = (
-                    DocumentVersionStatus.FAILED
-                )
+                document_version.status = DocumentVersionStatus.FAILED
 
-                document_result = (
-                    await self.session.execute(
-                        select(Document).where(
-                            Document.id
-                            == document_version.document_id,
-                        )
+                document_result = await self.session.execute(
+                    select(Document).where(
+                        Document.id == document_version.document_id,
                     )
                 )
 
-                document = (
-                    document_result.scalar_one_or_none()
-                )
+                document = document_result.scalar_one_or_none()
 
                 if document is not None:
-                    document.status = (
-                        DocumentStatus.FAILED
-                    )
+                    document.status = DocumentStatus.FAILED
 
         await self.session.commit()

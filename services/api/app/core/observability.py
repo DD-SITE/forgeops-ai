@@ -4,7 +4,6 @@ import logging
 
 from app.core.config import settings
 
-
 logger = logging.getLogger(__name__)
 
 
@@ -24,23 +23,21 @@ def configure_observability(app) -> None:
 
     try:
         from opentelemetry import trace
-        from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
+        from opentelemetry.exporter.otlp.proto.http.trace_exporter import (
+            OTLPSpanExporter,
+        )
         from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
         from opentelemetry.instrumentation.sqlalchemy import SQLAlchemyInstrumentor
         from opentelemetry.sdk.resources import Resource
         from opentelemetry.sdk.trace import TracerProvider
         from opentelemetry.sdk.trace.export import BatchSpanProcessor
 
-        resource = Resource.create(
-            {"service.name": settings.otel_service_name}
-        )
+        resource = Resource.create({"service.name": settings.otel_service_name})
         provider = TracerProvider(resource=resource)
         if settings.otel_exporter_otlp_endpoint:
             provider.add_span_processor(
                 BatchSpanProcessor(
-                    OTLPSpanExporter(
-                        endpoint=settings.otel_exporter_otlp_endpoint
-                    )
+                    OTLPSpanExporter(endpoint=settings.otel_exporter_otlp_endpoint)
                 )
             )
 
@@ -48,6 +45,7 @@ def configure_observability(app) -> None:
         FastAPIInstrumentor.instrument_app(app)
 
         from app.db.session import engine
+
         SQLAlchemyInstrumentor().instrument(engine=engine.sync_engine)
 
     except Exception:

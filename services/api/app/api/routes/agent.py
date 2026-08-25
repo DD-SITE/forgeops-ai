@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import logging
 from typing import Annotated
 from uuid import UUID
 
@@ -9,6 +10,7 @@ from fastapi.responses import StreamingResponse
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.agent.service import AgentService
 from app.auth.current_user import CurrentUser
 from app.auth.rbac import WorkspaceMemberPermission
 from app.db.session import get_db_session
@@ -19,8 +21,8 @@ from app.schemas.agent import (
     AgentRunRequest,
     AgentRunResponse,
 )
-from app.agent.service import AgentService
 
+logger = logging.getLogger(__name__)
 
 router = APIRouter(
     prefix="/workspaces/{workspace_id}/agent",
@@ -40,8 +42,13 @@ async def _get_run(
         )
     )
     run = result.scalar_one_or_none()
+
     if run is None:
-        raise HTTPException(status_code=404, detail="Agent run not found")
+        raise HTTPException(
+            status_code=404,
+            detail="Agent run not found",
+        )
+
     return run
 
 
@@ -71,7 +78,11 @@ def _response(run: AgentRun) -> AgentRunResponse:
     )
 
 
-@router.post("/runs", response_model=AgentRunResponse, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/runs",
+    response_model=AgentRunResponse,
+    status_code=status.HTTP_201_CREATED,
+)
 async def create_run(
     workspace_id: UUID,
     payload: AgentRunRequest,
@@ -80,6 +91,7 @@ async def create_run(
     session: Annotated[AsyncSession, Depends(get_db_session)],
 ) -> AgentRunResponse:
     service = AgentService(session)
+
     run = await service.create_run(
         workspace_id=workspace_id,
         user_id=current_user.id,
@@ -90,6 +102,7 @@ async def create_run(
         pass
 
     await session.refresh(run)
+
     return _response(run)
 
 
@@ -100,8 +113,9 @@ async def create_streaming_run(
     _: WorkspaceMemberPermission,
     current_user: CurrentUser,
     session: Annotated[AsyncSession, Depends(get_db_session)],
-):
+) -> StreamingResponse:
     service = AgentService(session)
+
     run = await service.create_run(
         workspace_id=workspace_id,
         user_id=current_user.id,
@@ -109,14 +123,23 @@ async def create_streaming_run(
     )
 
     async def event_stream():
-        yield f"event: run\ndata: {json.dumps({'run_id': str(run.id)})}\n\n"
+        yield (f"event: run\ndata: {json.dumps({'run_id': str(run.id)})}\n\n")
+
         try:
             async for event in service.stream_run(run):
-                yield f"event: update\ndata: {json.dumps(event, default=str)}\n\n"
+                yield (f"event: update\ndata: {json.dumps(event, default=str)}\n\n")
+
             await session.refresh(run)
-            yield f"event: complete\ndata: {json.dumps(_response(run).model_dump(mode='json'))}\n\n"
+
+            yield (
+                "event: complete\n"
+                f"data: {json.dumps(_response(run).model_dump(mode='json'))}\n\n"
+            )
+
         except Exception as exc:
-            yield f"event: error\ndata: {json.dumps({'message': str(exc)})}\n\n"
+            logger.exception("Agent SSE stream failed")
+
+            yield (f"event: error\ndata: {json.dumps({'message': str(exc)})}\n\n")
 
     return StreamingResponse(
         event_stream(),
@@ -136,10 +159,19 @@ async def get_run(
     _: WorkspaceMemberPermission,
     session: Annotated[AsyncSession, Depends(get_db_session)],
 ) -> AgentRunResponse:
-    return _response(await _get_run(session, workspace_id, run_id))
+    return _response(
+        await _get_run(
+            session,
+            workspace_id,
+            run_id,
+        )
+    )
 
 
-@router.post("/runs/{run_id}/approval", response_model=AgentRunResponse)
+@router.post(
+    "/runs/{run_id}/approval",
+    response_model=AgentRunResponse,
+)
 async def approve_run(
     workspace_id: UUID,
     run_id: UUID,
@@ -148,7 +180,12 @@ async def approve_run(
     current_user: CurrentUser,
     session: Annotated[AsyncSession, Depends(get_db_session)],
 ) -> AgentRunResponse:
-    run = await _get_run(session, workspace_id, run_id)
+    run = await _get_run(
+        session,
+        workspace_id,
+        run_id,
+    )
+
     service = AgentService(session)
 
     try:
@@ -159,7 +196,11 @@ async def approve_run(
             approver_id=current_user.id,
         )
     except ValueError as exc:
-        raise HTTPException(status_code=409, detail=str(exc)) from exc
+        raise HTTPException(
+            status_code=409,
+            detail=str(exc),
+        ) from exc
 
     await session.refresh(run)
+
     return _response(run)

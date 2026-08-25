@@ -19,7 +19,6 @@ from app.schemas.document import (
 from app.services.document_service import DocumentService
 from app.storage.s3 import S3Storage, get_storage
 
-
 router = APIRouter(
     prefix="/workspaces/{workspace_id}/documents",
     tags=["documents"],
@@ -200,7 +199,5 @@ async def get_download_url(
 
     return {
         "url": url,
-        "expires_in_seconds": (
-            settings.s3_presigned_url_expire_seconds
-        ),
+        "expires_in_seconds": (settings.s3_presigned_url_expire_seconds),
     }

@@ -25,7 +25,9 @@ class SearchRepository:
                 DocumentChunk.page_end,
                 DocumentChunk.section_path,
             )
-            .join(DocumentVersion, DocumentVersion.id == DocumentChunk.document_version_id)
+            .join(
+                DocumentVersion, DocumentVersion.id == DocumentChunk.document_version_id
+            )
             .join(Document, Document.id == DocumentVersion.document_id)
             .where(
                 Document.workspace_id == workspace_id,
@@ -110,19 +112,12 @@ class SearchRepository:
 
         # Lightweight deterministic reranker: RRF + semantic similarity
         # + lexical overlap. This is intentionally local and reproducible.
-        query_terms = {
-            token.lower()
-            for token in query.split()
-            if len(token) >= 3
-        }
+        query_terms = {token.lower() for token in query.split() if len(token) >= 3}
 
         for item in items:
             content_terms = set(item["content"].lower().split())
-            overlap = (
-                len(query_terms & content_terms) / max(len(query_terms), 1)
-            )
+            overlap = len(query_terms & content_terms) / max(len(query_terms), 1)
             semantic_score = max(float(item.get("similarity", 0.0)), 0.0)
-            lexical_score = max(float(item.get("keyword_score", 0.0)), 0.0)
             item["rerank_score"] = (
                 0.55 * item["rrf_score"]
                 + 0.30 * semantic_score

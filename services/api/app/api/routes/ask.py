@@ -21,7 +21,6 @@ from app.schemas.ask import (
 )
 from app.services.ask_service import AskService
 
-
 router = APIRouter(
     prefix="/workspaces/{workspace_id}/ask",
     tags=["ask"],
@@ -65,8 +64,5 @@ async def ask(
     return AskResponse(
         query=result["query"],
         answer=result["answer"],
-        sources=[
-            AskSource(**source)
-            for source in result["sources"]
-        ],
+        sources=[AskSource(**source) for source in result["sources"]],
     )

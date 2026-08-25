@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from uuid import UUID, uuid4
 
 from langgraph.types import Command
@@ -117,7 +117,8 @@ class AgentService:
                 elif decision in {"approve", "edit"}:
                     action.status = (
                         AgentActionStatus.EXECUTED
-                        if snapshot.values.get("action_result", {}).get("status") == "executed"
+                        if snapshot.values.get("action_result", {}).get("status")
+                        == "executed"
                         else AgentActionStatus.FAILED
                     )
                     action.approved_by = approver_id
@@ -166,7 +167,7 @@ class AgentService:
                 else AgentRunStatus.COMPLETED
             )
             run.answer = state.get("answer")
-            run.completed_at = datetime.now(timezone.utc)
+            run.completed_at = datetime.now(UTC)
 
         await self.session.commit()
 

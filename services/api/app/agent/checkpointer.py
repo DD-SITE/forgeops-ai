@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 import os
+from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
-from typing import AsyncIterator
 
 from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
 
@@ -31,9 +31,7 @@ def _build_serde():
         EncryptedSerializer,
     )
 
-    os.environ["LANGGRAPH_AES_KEY"] = (
-        settings.langgraph_aes_key
-    )
+    os.environ["LANGGRAPH_AES_KEY"] = settings.langgraph_aes_key
 
     return EncryptedSerializer.from_pycryptodome_aes()
 
@@ -60,9 +58,7 @@ async def setup_checkpointer() -> None:
 
 
 @asynccontextmanager
-async def get_checkpointer() -> AsyncIterator[
-    AsyncPostgresSaver
-]:
+async def get_checkpointer() -> AsyncIterator[AsyncPostgresSaver]:
     """
     Provide an AsyncPostgresSaver for an agent execution.
 

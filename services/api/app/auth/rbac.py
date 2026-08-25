@@ -37,10 +37,7 @@ def require_workspace_role(
                 detail="You are not a member of this workspace",
             )
 
-        if (
-            allowed_roles
-            and membership.role not in allowed_roles
-        ):
+        if allowed_roles and membership.role not in allowed_roles:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Insufficient workspace permissions",

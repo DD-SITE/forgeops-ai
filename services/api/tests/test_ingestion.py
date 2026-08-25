@@ -31,15 +31,9 @@ MinIO stores documents.
     assert len(blocks) >= 3
 
     architecture = blocks[0]
-    authentication = next(
-        block
-        for block in blocks
-        if block.text == "Authentication"
-    )
+    authentication = next(block for block in blocks if block.text == "Authentication")
 
-    assert architecture.section_path == (
-        "Architecture",
-    )
+    assert architecture.section_path == ("Architecture",)
 
     assert authentication.section_path == (
         "Architecture",
@@ -48,9 +42,7 @@ MinIO stores documents.
 
 
 def test_text_parser_extracts_content():
-    blocks = parse_text(
-        b"Hello ForgeOps.\n\nThis is a test document."
-    )
+    blocks = parse_text(b"Hello ForgeOps.\n\nThis is a test document.")
 
     assert len(blocks) == 1
     assert "Hello ForgeOps." in blocks[0].text
@@ -59,9 +51,7 @@ def test_text_parser_extracts_content():
 def test_chunker_creates_overlapping_chunks():
     blocks = [
         ParsedBlock(
-            text=(
-                "word " * 500
-            ),
+            text=("word " * 500),
             page_start=1,
             page_end=1,
             section_path=("Architecture",),
@@ -72,11 +62,7 @@ def test_chunker_creates_overlapping_chunks():
 
     assert len(chunks) > 1
 
-    assert all(
-        chunk.section_path
-        == ["Architecture"]
-        for chunk in chunks
-    )
+    assert all(chunk.section_path == ["Architecture"] for chunk in chunks)
 
 
 class FakeEmbeddingService:
@@ -84,19 +70,13 @@ class FakeEmbeddingService:
         self,
         texts: list[str],
     ) -> list[list[float]]:
-        return [
-            [0.0] * 384
-            for _ in texts
-        ]
+        return [[0.0] * 384 for _ in texts]
 
     def token_counts(
         self,
         texts: list[str],
     ) -> list[int]:
-        return [
-            len(text.split())
-            for text in texts
-        ]
+        return [len(text.split()) for text in texts]
 
 
 def test_pipeline_builds_vector_chunks():
@@ -113,11 +93,7 @@ def test_pipeline_builds_vector_chunks():
     chunks = pipeline.build_chunks(
         filename="test.md",
         content_type="text/markdown",
-        data=(
-            b"# Test\n\n"
-            b"ForgeOps is a production-grade "
-            b"RAG system."
-        ),
+        data=(b"# Test\n\nForgeOps is a production-grade RAG system."),
         document_version_id=uuid4(),
     )
 

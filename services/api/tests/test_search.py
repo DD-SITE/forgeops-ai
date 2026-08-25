@@ -40,10 +40,7 @@ async def search_client(
 ):
     user = User(
         clerk_id=f"search_clerk_{uuid4().hex}",
-        email=(
-            f"search-{uuid4().hex[:8]}"
-            "@forgeops.local"
-        ),
+        email=(f"search-{uuid4().hex[:8]}@forgeops.local"),
         full_name="Search User",
     )
 
@@ -91,10 +88,7 @@ async def search_client(
     relevant_chunk = DocumentChunk(
         document_version_id=version.id,
         chunk_index=0,
-        content=(
-            "ForgeOps uses PostgreSQL and pgvector "
-            "for semantic retrieval."
-        ),
+        content=("ForgeOps uses PostgreSQL and pgvector for semantic retrieval."),
         content_hash=uuid4().hex,
         page_start=None,
         page_end=None,
@@ -109,10 +103,7 @@ async def search_client(
     unrelated_chunk = DocumentChunk(
         document_version_id=version.id,
         chunk_index=1,
-        content=(
-            "The deployment dashboard displays "
-            "runtime health information."
-        ),
+        content=("The deployment dashboard displays runtime health information."),
         content_hash=uuid4().hex,
         page_start=None,
         page_end=None,
@@ -141,17 +132,11 @@ async def search_client(
     def override_embeddings():
         return FakeEmbeddingService()
 
-    app.dependency_overrides[get_db_session] = (
-        override_db
-    )
+    app.dependency_overrides[get_db_session] = override_db
 
-    app.dependency_overrides[get_current_user] = (
-        override_user
-    )
+    app.dependency_overrides[get_current_user] = override_user
 
-    app.dependency_overrides[
-        get_embedding_service
-    ] = override_embeddings
+    app.dependency_overrides[get_embedding_service] = override_embeddings
 
     async with AsyncClient(
         transport=ASGITransport(app=app),
@@ -181,18 +166,13 @@ async def test_semantic_search_returns_relevant_chunk(
 
     body = response.json()
 
-    assert body["query"] == (
-        "How does ForgeOps retrieve knowledge?"
-    )
+    assert body["query"] == ("How does ForgeOps retrieve knowledge?")
 
     assert body["results"]
 
     result = body["results"][0]
 
-    assert (
-        "PostgreSQL"
-        in result["content"]
-    )
+    assert "PostgreSQL" in result["content"]
 
     assert result["similarity"] > 0.5
 
@@ -206,10 +186,7 @@ async def test_non_member_cannot_search_workspace(
 
     outsider = User(
         clerk_id=f"outsider_{uuid4().hex}",
-        email=(
-            f"outsider-{uuid4().hex[:8]}"
-            "@forgeops.local"
-        ),
+        email=(f"outsider-{uuid4().hex[:8]}@forgeops.local"),
         full_name="Outsider",
     )
 
@@ -220,9 +197,7 @@ async def test_non_member_cannot_search_workspace(
     async def override_outsider():
         return outsider
 
-    app.dependency_overrides[
-        get_current_user
-    ] = override_outsider
+    app.dependency_overrides[get_current_user] = override_outsider
 
     response = await client.post(
         f"/api/v1/workspaces/{workspace.id}/search",

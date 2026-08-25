@@ -19,9 +19,7 @@ class IngestionPipeline:
         embedding_service: EmbeddingService,
     ) -> None:
         self.parser = parser
-        self.embedding_service = (
-            embedding_service
-        )
+        self.embedding_service = embedding_service
 
     def build_chunks(
         self,
@@ -40,31 +38,16 @@ class IngestionPipeline:
         drafts = chunk_blocks(blocks)
 
         if not drafts:
-            raise ValueError(
-                "Document produced no chunks."
-            )
+            raise ValueError("Document produced no chunks.")
 
-        texts = [
-            draft.text
-            for draft in drafts
-        ]
+        texts = [draft.text for draft in drafts]
 
-        embeddings = (
-            self.embedding_service.embed_passages(
-                texts
-            )
-        )
+        embeddings = self.embedding_service.embed_passages(texts)
 
-        token_counts = (
-            self.embedding_service.token_counts(
-                texts
-            )
-        )
+        token_counts = self.embedding_service.token_counts(texts)
 
         if len(embeddings) != len(drafts):
-            raise RuntimeError(
-                "Embedding count does not match chunk count."
-            )
+            raise RuntimeError("Embedding count does not match chunk count.")
 
         chunks: list[DocumentChunk] = []
 
@@ -79,38 +62,27 @@ class IngestionPipeline:
                 token_counts,
             )
         ):
-            content_hash = hashlib.sha256(
-                draft.text.encode("utf-8")
-            ).hexdigest()
+            content_hash = hashlib.sha256(draft.text.encode("utf-8")).hexdigest()
 
             chunks.append(
                 DocumentChunk(
-                    document_version_id=(
-                        document_version_id
-                    ),
+                    document_version_id=(document_version_id),
                     chunk_index=index,
                     content=draft.text,
                     content_hash=content_hash,
                     page_start=draft.page_start,
                     page_end=draft.page_end,
-                    section_path=(
-                        draft.section_path
-                        if draft.section_path
-                        else None
-                    ),
+                    section_path=(draft.section_path if draft.section_path else None),
                     token_count=token_count,
                     embedding=embedding,
                 )
             )
 
         if any(
-            len(chunk.embedding)
-            != settings.embedding_dimension
-            for chunk in chunks
+            len(chunk.embedding) != settings.embedding_dimension for chunk in chunks
         ):
             raise RuntimeError(
-                "Embedding dimension does not match "
-                "database configuration."
+                "Embedding dimension does not match database configuration."
             )
 
         return chunks

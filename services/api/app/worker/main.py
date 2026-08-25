@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from uuid import UUID
 
 from sqlalchemy import select
@@ -24,18 +24,12 @@ from app.repositories.ingestion_repository import (
 )
 from app.storage.s3 import S3Storage
 
-
 logging.basicConfig(
     level=logging.INFO,
-    format=(
-        "%(asctime)s | %(levelname)s | "
-        "%(name)s | %(message)s"
-    ),
+    format=("%(asctime)s | %(levelname)s | %(name)s | %(message)s"),
 )
 
-logger = logging.getLogger(
-    "forgeops.ingestion-worker"
-)
+logger = logging.getLogger("forgeops.ingestion-worker")
 
 
 class IngestionWorker:
@@ -44,9 +38,7 @@ class IngestionWorker:
         self.storage = S3Storage()
         self.parser = DocumentParser()
 
-        self.embedding_service = (
-            get_embedding_service()
-        )
+        self.embedding_service = get_embedding_service()
 
         self.pipeline = IngestionPipeline(
             parser=self.parser,
@@ -56,13 +48,9 @@ class IngestionWorker:
         self.running = True
 
     async def run(self) -> None:
-        logger.info(
-            "Starting ForgeOps ingestion worker"
-        )
+        logger.info("Starting ForgeOps ingestion worker")
 
-        recovery_task = asyncio.create_task(
-            self.recovery_loop()
-        )
+        recovery_task = asyncio.create_task(self.recovery_loop())
 
         try:
             while self.running:
@@ -92,8 +80,7 @@ class IngestionWorker:
 
                 except Exception:
                     logger.exception(
-                        "Unexpected worker-loop error. "
-                        "Worker will continue running."
+                        "Unexpected worker-loop error. Worker will continue running."
                     )
 
                     await asyncio.sleep(2)
@@ -110,46 +97,34 @@ class IngestionWorker:
 
             await self.queue.close()
 
-            logger.info(
-                "Ingestion worker stopped"
-            )
+            logger.info("Ingestion worker stopped")
 
     async def process_job(
         self,
         job_id: UUID,
     ) -> None:
         async with AsyncSessionLocal() as session:
-            repository = IngestionRepository(
-                session
-            )
+            repository = IngestionRepository(session)
 
-            job = await repository.claim_job(
-                job_id
-            )
+            job = await repository.claim_job(job_id)
 
             if job is None:
                 return
 
-            version = (
-                await repository.get_document_version(
-                    job.document_version_id,
-                )
+            version = await repository.get_document_version(
+                job.document_version_id,
             )
 
             if version is None:
                 await repository.mark_failed(
                     job,
-                    error_message=(
-                        "Document version not found."
-                    ),
+                    error_message=("Document version not found."),
                     retry=False,
                     next_attempt_at=None,
                 )
                 return
 
-            await repository.mark_document_processing(
-                version
-            )
+            await repository.mark_document_processing(version)
 
             try:
                 data = await asyncio.to_thread(
@@ -170,21 +145,16 @@ class IngestionWorker:
                     chunks=chunks,
                 )
 
-                await repository.mark_completed(
-                    job
-                )
+                await repository.mark_completed(job)
 
                 logger.info(
-                    (
-                        "Completed ingestion job %s "
-                        "for version %s: %s chunks"
-                    ),
+                    ("Completed ingestion job %s for version %s: %s chunks"),
                     job.id,
                     version.id,
                     len(chunks),
                 )
 
-            except Exception as exc:
+            except Exception as exc:  # noqa: BLE001
                 await self.handle_failure(
                     job,
                     exc,
@@ -195,35 +165,24 @@ class IngestionWorker:
         job: IngestionJob,
         error: Exception,
     ) -> None:
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
 
-        retry = (
-            job.attempt_count
-            < job.max_attempts
-        )
+        retry = job.attempt_count < job.max_attempts
 
         next_attempt_at = None
 
         if retry:
-            delay = (
-                settings.worker_retry_base_delay_seconds
-                * (
-                    2
-                    ** max(
-                        job.attempt_count - 1,
-                        0,
-                    )
+            delay = settings.worker_retry_base_delay_seconds * (
+                2
+                ** max(
+                    job.attempt_count - 1,
+                    0,
                 )
             )
 
-            next_attempt_at = (
-                now
-                + timedelta(seconds=delay)
-            )
+            next_attempt_at = now + timedelta(seconds=delay)
 
-        message = (
-            f"{type(error).__name__}: {error}"
-        )
+        message = f"{type(error).__name__}: {error}"
 
         logger.error(
             "Ingestion job %s failed: %s",
@@ -232,13 +191,9 @@ class IngestionWorker:
         )
 
         async with AsyncSessionLocal() as session:
-            repository = IngestionRepository(
-                session
-            )
+            repository = IngestionRepository(session)
 
-            fresh_job = await repository.get_job(
-                job.id
-            )
+            fresh_job = await repository.get_job(job.id)
 
             if fresh_job is None:
                 return
@@ -259,68 +214,44 @@ class IngestionWorker:
                 raise
 
             except Exception:
-                logger.exception(
-                    "Job recovery loop failed"
-                )
+                logger.exception("Job recovery loop failed")
 
-            await asyncio.sleep(
-                settings.worker_recovery_interval_seconds
-            )
+            await asyncio.sleep(settings.worker_recovery_interval_seconds)
 
     async def recover_jobs(self) -> None:
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
 
-        stale_time = (
-            now
-            - timedelta(
-                seconds=settings.worker_stale_job_seconds
-            )
-        )
+        stale_time = now - timedelta(seconds=settings.worker_stale_job_seconds)
 
         async with AsyncSessionLocal() as session:
             stale_processing = await session.execute(
                 select(IngestionJob).where(
-                    IngestionJob.status
-                    == IngestionJobStatus.PROCESSING,
-                    IngestionJob.started_at
-                    < stale_time,
+                    IngestionJob.status == IngestionJobStatus.PROCESSING,
+                    IngestionJob.started_at < stale_time,
                 )
             )
 
-            for job in (
-                stale_processing.scalars().all()
-            ):
+            for job in stale_processing.scalars().all():
                 logger.warning(
                     "Resetting stale job %s",
                     job.id,
                 )
 
-                job.status = (
-                    IngestionJobStatus.PENDING
-                )
+                job.status = IngestionJobStatus.PENDING
 
                 job.next_attempt_at = now
 
-                job.last_error = (
-                    "Worker considered stale and "
-                    "scheduled for recovery."
-                )
+                job.last_error = "Worker considered stale and scheduled for recovery."
 
             stale_queued = await session.execute(
                 select(IngestionJob).where(
-                    IngestionJob.status
-                    == IngestionJobStatus.QUEUED,
-                    IngestionJob.queued_at
-                    < stale_time,
+                    IngestionJob.status == IngestionJobStatus.QUEUED,
+                    IngestionJob.queued_at < stale_time,
                 )
             )
 
-            for job in (
-                stale_queued.scalars().all()
-            ):
-                job.status = (
-                    IngestionJobStatus.PENDING
-                )
+            for job in stale_queued.scalars().all():
+                job.status = IngestionJobStatus.PENDING
 
                 job.next_attempt_at = now
 
@@ -330,34 +261,19 @@ class IngestionWorker:
             due_jobs = await session.execute(
                 select(IngestionJob)
                 .where(
-                    IngestionJob.status
-                    == IngestionJobStatus.PENDING,
-                    (
-                        IngestionJob.next_attempt_at
-                        .is_(None)
-                    )
-                    | (
-                        IngestionJob.next_attempt_at
-                        <= now
-                    ),
+                    IngestionJob.status == IngestionJobStatus.PENDING,
+                    (IngestionJob.next_attempt_at.is_(None))
+                    | (IngestionJob.next_attempt_at <= now),
                 )
-                .order_by(
-                    IngestionJob.created_at.asc()
-                )
+                .order_by(IngestionJob.created_at.asc())
                 .limit(50)
-                .with_for_update(
-                    skip_locked=True
-                )
+                .with_for_update(skip_locked=True)
             )
 
-            jobs = list(
-                due_jobs.scalars().all()
-            )
+            jobs = list(due_jobs.scalars().all())
 
             for job in jobs:
-                job.status = (
-                    IngestionJobStatus.QUEUED
-                )
+                job.status = IngestionJobStatus.QUEUED
 
                 job.queued_at = now
 
@@ -365,9 +281,7 @@ class IngestionWorker:
 
         for job in jobs:
             try:
-                await self.queue.enqueue(
-                    job.id
-                )
+                await self.queue.enqueue(job.id)
 
             except Exception:
                 logger.exception(
@@ -376,21 +290,15 @@ class IngestionWorker:
                 )
 
                 async with AsyncSessionLocal() as session:
-                    repository = IngestionRepository(
-                        session
-                    )
+                    repository = IngestionRepository(session)
 
-                    fresh_job = (
-                        await repository.get_job(
-                            job.id,
-                            for_update=True,
-                        )
+                    fresh_job = await repository.get_job(
+                        job.id,
+                        for_update=True,
                     )
 
                     if fresh_job is not None:
-                        fresh_job.status = (
-                            IngestionJobStatus.PENDING
-                        )
+                        fresh_job.status = IngestionJobStatus.PENDING
 
                         await session.commit()
 

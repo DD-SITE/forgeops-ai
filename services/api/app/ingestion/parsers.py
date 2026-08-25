@@ -19,10 +19,7 @@ class ParsedBlock:
 def normalize_text(text: str) -> str:
     text = text.replace("\r\n", "\n").replace("\r", "\n")
 
-    lines = [
-        line.rstrip()
-        for line in text.splitlines()
-    ]
+    lines = [line.rstrip() for line in text.splitlines()]
 
     normalized = "\n".join(lines)
 
@@ -106,9 +103,7 @@ def parse_docx(data: bytes) -> list[ParsedBlock]:
         )
 
         if level is not None:
-            section_stack = (
-                section_stack[: level - 1]
-            )
+            section_stack = section_stack[: level - 1]
             section_stack.append(text)
 
             blocks.append(
@@ -116,9 +111,7 @@ def parse_docx(data: bytes) -> list[ParsedBlock]:
                     text=text,
                     page_start=None,
                     page_end=None,
-                    section_path=tuple(
-                        section_stack
-                    ),
+                    section_path=tuple(section_stack),
                 )
             )
 
@@ -129,16 +122,12 @@ def parse_docx(data: bytes) -> list[ParsedBlock]:
                 text=text,
                 page_start=None,
                 page_end=None,
-                section_path=tuple(
-                    section_stack
-                ),
+                section_path=tuple(section_stack),
             )
         )
 
     if not blocks:
-        raise ValueError(
-            "The DOCX contains no extractable text."
-        )
+        raise ValueError("The DOCX contains no extractable text.")
 
     return blocks
 
@@ -149,13 +138,17 @@ def parse_markdown(data: bytes) -> list[ParsedBlock]:
         errors="replace",
     )
 
-    lines = text.replace(
-        "\r\n",
-        "\n",
-    ).replace(
-        "\r",
-        "\n",
-    ).splitlines()
+    lines = (
+        text.replace(
+            "\r\n",
+            "\n",
+        )
+        .replace(
+            "\r",
+            "\n",
+        )
+        .splitlines()
+    )
 
     blocks: list[ParsedBlock] = []
     section_stack: list[str] = []
@@ -165,9 +158,7 @@ def parse_markdown(data: bytes) -> list[ParsedBlock]:
         if not buffer:
             return
 
-        block_text = normalize_text(
-            "\n".join(buffer)
-        )
+        block_text = normalize_text("\n".join(buffer))
 
         if block_text:
             blocks.append(
@@ -175,9 +166,7 @@ def parse_markdown(data: bytes) -> list[ParsedBlock]:
                     text=block_text,
                     page_start=None,
                     page_end=None,
-                    section_path=tuple(
-                        section_stack
-                    ),
+                    section_path=tuple(section_stack),
                 )
             )
 
@@ -195,9 +184,7 @@ def parse_markdown(data: bytes) -> list[ParsedBlock]:
             level = len(heading.group(1))
             title = heading.group(2).strip()
 
-            section_stack = (
-                section_stack[: level - 1]
-            )
+            section_stack = section_stack[: level - 1]
             section_stack.append(title)
 
             blocks.append(
@@ -205,9 +192,7 @@ def parse_markdown(data: bytes) -> list[ParsedBlock]:
                     text=title,
                     page_start=None,
                     page_end=None,
-                    section_path=tuple(
-                        section_stack
-                    ),
+                    section_path=tuple(section_stack),
                 )
             )
 
@@ -222,9 +207,7 @@ def parse_markdown(data: bytes) -> list[ParsedBlock]:
     flush_buffer()
 
     if not blocks:
-        raise ValueError(
-            "The Markdown document contains no extractable text."
-        )
+        raise ValueError("The Markdown document contains no extractable text.")
 
     return blocks
 
@@ -238,9 +221,7 @@ def parse_text(data: bytes) -> list[ParsedBlock]:
     text = normalize_text(text)
 
     if not text:
-        raise ValueError(
-            "The text document is empty."
-        )
+        raise ValueError("The text document is empty.")
 
     return [
         ParsedBlock(
@@ -274,6 +255,4 @@ class DocumentParser:
         if filename_lower.endswith(".txt"):
             return parse_text(data)
 
-        raise ValueError(
-            f"Unsupported document format: {filename}"
-        )
+        raise ValueError(f"Unsupported document format: {filename}")

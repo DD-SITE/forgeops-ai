@@ -2,7 +2,6 @@ from typing import Annotated
 from uuid import UUID
 
 from fastapi import APIRouter, Depends
-
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.rbac import WorkspaceMemberPermission
@@ -19,7 +18,6 @@ from app.schemas.search import (
 from app.services.search_service import (
     SearchService,
 )
-
 
 router = APIRouter(
     prefix="/workspaces/{workspace_id}/search",
@@ -58,8 +56,5 @@ async def semantic_search(
 
     return SearchResponse(
         query=payload.query,
-        results=[
-            SearchResult(**result)
-            for result in results
-        ],
+        results=[SearchResult(**result) for result in results],
     )

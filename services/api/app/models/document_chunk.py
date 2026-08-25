@@ -1,24 +1,28 @@
 from datetime import datetime
+from typing import TYPE_CHECKING
 from uuid import UUID, uuid4
 
 from pgvector.sqlalchemy import VECTOR
 from sqlalchemy import (
-    DateTime,
+    JSON,
     Computed,
+    DateTime,
     ForeignKey,
     Index,
     Integer,
-    JSON,
     String,
     Text,
     UniqueConstraint,
     func,
 )
-from sqlalchemy.dialects.postgresql import UUID as PGUUID, TSVECTOR
+from sqlalchemy.dialects.postgresql import TSVECTOR
+from sqlalchemy.dialects.postgresql import UUID as PGUUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
 
+if TYPE_CHECKING:
+    from app.models.document_version import DocumentVersion
 
 EMBEDDING_DIMENSION = 384
 

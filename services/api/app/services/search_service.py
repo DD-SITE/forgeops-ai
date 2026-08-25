@@ -51,5 +51,6 @@ class SearchService:
         return [
             result
             for result in results
-            if result["similarity"] >= min_similarity or result.get("keyword_score", 0.0) > 0
+            if result["similarity"] >= min_similarity
+            or result.get("keyword_score", 0.0) > 0
         ]

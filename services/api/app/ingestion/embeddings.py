@@ -22,29 +22,19 @@ class EmbeddingService:
             batch_size=settings.worker_chunk_batch_size,
         )
 
-        return [
-            vector.tolist()
-            for vector in vectors
-        ]
+        return [vector.tolist() for vector in vectors]
 
     def token_counts(
         self,
         texts: list[str],
     ) -> list[int]:
-        return [
-            self.model.token_count(text)
-            for text in texts
-        ]
+        return [self.model.token_count(text) for text in texts]
 
     def embed_query(
         self,
         query: str,
     ) -> list[float]:
-        vector = next(
-            iter(
-                self.model.query_embed(query)
-            )
-        )
+        vector = next(iter(self.model.query_embed(query)))
 
         return vector.tolist()
 

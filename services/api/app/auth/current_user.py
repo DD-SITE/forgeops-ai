@@ -4,9 +4,9 @@ from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.dependencies import CurrentClerkUserId
+from app.auth.service import get_or_create_local_user
 from app.db.session import get_db_session
 from app.models.user import User
-from app.auth.service import get_or_create_local_user
 
 
 async def get_current_user(

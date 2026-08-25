@@ -130,12 +130,8 @@ async def test_create_upload_intent(
 
     assert body["document_id"] is not None
     assert body["version_id"] is not None
-    assert body["object_key"].startswith(
-        f"workspaces/{workspace.id}/documents/"
-    )
-    assert body["upload_url"].startswith(
-        "http://fake-storage/"
-    )
+    assert body["object_key"].startswith(f"workspaces/{workspace.id}/documents/")
+    assert body["upload_url"].startswith("http://fake-storage/")
 
     assert fake_storage.objects == {}
 

@@ -54,6 +54,4 @@ class GitHubTool:
 
                 await asyncio.sleep(2**attempt)
 
-        raise RuntimeError(
-            f"GitHub API returned {response.status_code}: {last_error}"
-        )
+        raise RuntimeError(f"GitHub API returned {response.status_code}: {last_error}")

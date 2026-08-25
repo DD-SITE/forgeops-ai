@@ -1,21 +1,29 @@
 from datetime import datetime
 from enum import Enum
+from typing import TYPE_CHECKING
 from uuid import UUID, uuid4
 
 from sqlalchemy import (
     BigInteger,
     DateTime,
-    Enum as SQLEnum,
     ForeignKey,
     Integer,
     String,
     UniqueConstraint,
     func,
 )
+from sqlalchemy import (
+    Enum as SQLEnum,
+)
 from sqlalchemy.dialects.postgresql import UUID as PGUUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
+
+if TYPE_CHECKING:
+    from app.models.document import Document
+    from app.models.document_chunk import DocumentChunk
+    from app.models.ingestion_job import IngestionJob
 
 
 class DocumentVersionStatus(str, Enum):

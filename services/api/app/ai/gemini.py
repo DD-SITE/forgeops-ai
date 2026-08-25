@@ -3,14 +3,13 @@ from __future__ import annotations
 import asyncio
 import logging
 from functools import lru_cache
-from typing import Any
+from typing import Any, ClassVar
 
 from google import genai
 from google.genai import types
 from pydantic import BaseModel, Field
 
 from app.core.config import settings
-
 
 logger = logging.getLogger(__name__)
 
@@ -45,7 +44,7 @@ class GeminiService:
     2. Falling back to another supported Gemini model when necessary.
     """
 
-    TRANSIENT_STATUS_CODES = {
+    TRANSIENT_STATUS_CODES: ClassVar[set[int]] = {
         429,
         500,
         502,
@@ -57,9 +56,7 @@ class GeminiService:
 
     INITIAL_RETRY_DELAY_SECONDS = 1.0
 
-    FALLBACK_MODELS = (
-        "gemini-3.6-flash",
-    )
+    FALLBACK_MODELS = ("gemini-3.6-flash",)
 
     def __init__(self) -> None:
         self.client = genai.Client(
@@ -120,9 +117,7 @@ class GeminiService:
     ) -> bool:
         """Return True when an error is likely temporary."""
 
-        status_code = cls._extract_status_code(
-            error
-        )
+        status_code = cls._extract_status_code(error)
 
         if status_code in cls.TRANSIENT_STATUS_CODES:
             return True
@@ -146,10 +141,7 @@ class GeminiService:
             "timed out",
         )
 
-        return any(
-            marker in message
-            for marker in transient_markers
-        )
+        return any(marker in message for marker in transient_markers)
 
     @classmethod
     def _model_candidates(
@@ -192,39 +184,31 @@ class GeminiService:
         provider failures.
         """
 
-        models = self._model_candidates(
-            self.model
-        )
+        models = self._model_candidates(self.model)
 
         last_error: Exception | None = None
 
-        for model_index, model in enumerate(
-            models
-        ):
+        for model_index, model in enumerate(models):
             for attempt in range(
                 1,
                 self.MAX_RETRIES_PER_MODEL + 1,
             ):
                 try:
                     logger.info(
-                        "Calling Gemini model=%s "
-                        "attempt=%s/%s",
+                        "Calling Gemini model=%s attempt=%s/%s",
                         model,
                         attempt,
                         self.MAX_RETRIES_PER_MODEL,
                     )
 
-                    response = (
-                        await self.client.aio.models.generate_content(
-                            model=model,
-                            contents=contents,
-                            config=config,
-                        )
+                    response = await self.client.aio.models.generate_content(
+                        model=model,
+                        contents=contents,
+                        config=config,
                     )
 
                     logger.info(
-                        "Gemini request succeeded "
-                        "with model=%s",
+                        "Gemini request succeeded with model=%s",
                         model,
                     )
 
@@ -233,17 +217,9 @@ class GeminiService:
                 except Exception as error:
                     last_error = error
 
-                    status_code = (
-                        self._extract_status_code(
-                            error
-                        )
-                    )
+                    status_code = self._extract_status_code(error)
 
-                    transient = (
-                        self._is_transient_error(
-                            error
-                        )
-                    )
+                    transient = self._is_transient_error(error)
 
                     logger.warning(
                         "Gemini request failed "
@@ -263,36 +239,22 @@ class GeminiService:
                         raise
 
                     # Retry the same model if attempts remain.
-                    if (
-                        attempt
-                        < self.MAX_RETRIES_PER_MODEL
-                    ):
-                        delay = (
-                            self.INITIAL_RETRY_DELAY_SECONDS
-                            * (2 ** (attempt - 1))
-                        )
+                    if attempt < self.MAX_RETRIES_PER_MODEL:
+                        delay = self.INITIAL_RETRY_DELAY_SECONDS * (2 ** (attempt - 1))
 
                         logger.info(
-                            "Retrying Gemini model=%s "
-                            "in %.1f seconds",
+                            "Retrying Gemini model=%s in %.1f seconds",
                             model,
                             delay,
                         )
 
-                        await asyncio.sleep(
-                            delay
-                        )
+                        await asyncio.sleep(delay)
 
                         continue
 
                     # This model has been exhausted.
-                    if (
-                        model_index
-                        < len(models) - 1
-                    ):
-                        next_model = models[
-                            model_index + 1
-                        ]
+                    if model_index < len(models) - 1:
+                        next_model = models[model_index + 1]
 
                         logger.warning(
                             "Gemini model=%s remains "
@@ -312,9 +274,7 @@ class GeminiService:
                 "fallback models."
             ) from last_error
 
-        raise RuntimeError(
-            "Gemini request failed without a response."
-        )
+        raise RuntimeError("Gemini request failed without a response.")
 
     # ------------------------------------------------------------------
     # Answer generation
@@ -353,9 +313,7 @@ USER QUESTION:
         answer = response.text
 
         if not answer:
-            raise RuntimeError(
-                "Gemini returned an empty response."
-            )
+            raise RuntimeError("Gemini returned an empty response.")
 
         return answer.strip()
 
@@ -391,24 +349,20 @@ QUESTION:
             ),
         )
 
-        if getattr(
-            response,
-            "parsed",
-            None,
-        ) is not None:
-            return AnswerDraft.model_validate(
-                response.parsed
+        if (
+            getattr(
+                response,
+                "parsed",
+                None,
             )
+            is not None
+        ):
+            return AnswerDraft.model_validate(response.parsed)
 
         if not response.text:
-            raise RuntimeError(
-                "Gemini returned an empty "
-                "structured response."
-            )
+            raise RuntimeError("Gemini returned an empty structured response.")
 
-        return AnswerDraft.model_validate_json(
-            response.text
-        )
+        return AnswerDraft.model_validate_json(response.text)
 
     # ------------------------------------------------------------------
     # Query expansion
@@ -436,28 +390,23 @@ QUESTION:
             ),
         )
 
-        if getattr(
-            response,
-            "parsed",
-            None,
-        ) is not None:
-            data = QueryExpansion.model_validate(
-                response.parsed
+        if (
+            getattr(
+                response,
+                "parsed",
+                None,
             )
+            is not None
+        ):
+            data = QueryExpansion.model_validate(response.parsed)
 
         elif response.text:
-            data = QueryExpansion.model_validate_json(
-                response.text
-            )
+            data = QueryExpansion.model_validate_json(response.text)
 
         else:
             return []
 
-        return [
-            q.strip()
-            for q in data.queries
-            if q.strip()
-        ][:3]
+        return [q.strip() for q in data.queries if q.strip()][:3]
 
     # ------------------------------------------------------------------
     # Action planning
@@ -498,23 +447,20 @@ User request:
             ),
         )
 
-        if getattr(
-            response,
-            "parsed",
-            None,
-        ) is not None:
-            return ActionPlan.model_validate(
-                response.parsed
+        if (
+            getattr(
+                response,
+                "parsed",
+                None,
             )
+            is not None
+        ):
+            return ActionPlan.model_validate(response.parsed)
 
         if not response.text:
-            return ActionPlan(
-                action_type="none"
-            )
+            return ActionPlan(action_type="none")
 
-        return ActionPlan.model_validate_json(
-            response.text
-        )
+        return ActionPlan.model_validate_json(response.text)
 
 
 @lru_cache

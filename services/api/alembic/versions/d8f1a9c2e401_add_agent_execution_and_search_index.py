@@ -5,16 +5,16 @@ Revises: c5e7f914a321
 Create Date: 2026-08-24
 """
 
-from typing import Sequence, Union
+from collections.abc import Sequence
 
-from alembic import op
 import sqlalchemy as sa
 from sqlalchemy.dialects.postgresql import ENUM, JSONB, TSVECTOR
 
+from alembic import op
 
 # revision identifiers, used by Alembic.
 revision: str = "d8f1a9c2e401"
-down_revision: Union[str, Sequence[str], None] = "c5e7f914a321"
+down_revision: str | Sequence[str] | None = "c5e7f914a321"
 branch_labels = None
 depends_on = None
 

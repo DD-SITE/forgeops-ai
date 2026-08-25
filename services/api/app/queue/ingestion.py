@@ -8,7 +8,11 @@ from uuid import UUID
 import redis.asyncio as redis
 from redis.exceptions import (
     ConnectionError as RedisConnectionError,
+)
+from redis.exceptions import (
     ResponseError,
+)
+from redis.exceptions import (
     TimeoutError as RedisTimeoutError,
 )
 
@@ -24,6 +28,7 @@ class IngestionQueue:
     """
 
     group_name = "forgeops-workers"
+
     @property
     def consumer_name(self) -> str:
         return f"{socket.gethostname()}-{os.getpid()}"
