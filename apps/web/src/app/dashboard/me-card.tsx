@@ -35,6 +35,9 @@ export function MeCard() {
   }, [request]);
 
   useEffect(() => {
+    // This effect intentionally performs the initial authenticated-user fetch.
+    // The resulting state updates happen asynchronously after the request.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     void loadUser();
   }, [loadUser]);
 

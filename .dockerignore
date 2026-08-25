@@ -1,0 +1,12 @@
+.git
+.gitignore
+node_modules
+.next
+.venv
+__pycache__
+*.pyc
+.env
+.env.*
+coverage
+.pytest_cache
+uvicorn.log

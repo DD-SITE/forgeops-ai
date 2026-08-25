@@ -42,9 +42,7 @@ async def get_or_create_local_user(
 ) -> User:
     repository = UserRepository(session)
 
-    existing_user = await repository.get_by_clerk_id(
-        clerk_user_id
-    )
+    existing_user = await repository.get_by_clerk_id(clerk_user_id)
 
     if existing_user is not None:
         return existing_user
@@ -69,11 +67,7 @@ async def get_or_create_local_user(
     first_name = getattr(clerk_user, "first_name", None)
     last_name = getattr(clerk_user, "last_name", None)
 
-    full_name = " ".join(
-        part
-        for part in [first_name, last_name]
-        if part
-    ) or None
+    full_name = " ".join(part for part in [first_name, last_name] if part) or None
 
     try:
         user = await repository.create(
@@ -89,9 +83,7 @@ async def get_or_create_local_user(
     except Exception:
         await session.rollback()
 
-        existing_user = await repository.get_by_clerk_id(
-            clerk_user_id
-        )
+        existing_user = await repository.get_by_clerk_id(clerk_user_id)
 
         if existing_user is not None:
             return existing_user

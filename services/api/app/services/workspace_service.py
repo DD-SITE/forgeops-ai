@@ -93,8 +93,7 @@ class WorkspaceService:
         current_target_role = target_membership.role
 
         if (
-            target_membership.user_id
-            == actor_membership.user_id
+            target_membership.user_id == actor_membership.user_id
             and new_role != current_target_role
         ):
             raise HTTPException(
@@ -102,10 +101,7 @@ class WorkspaceService:
                 detail="You cannot change your own workspace role",
             )
 
-        if (
-            actor_role == WorkspaceRole.ADMIN
-            and new_role != WorkspaceRole.MEMBER
-        ):
+        if actor_role == WorkspaceRole.ADMIN and new_role != WorkspaceRole.MEMBER:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Admins can only assign the member role",
@@ -120,10 +116,7 @@ class WorkspaceService:
                 detail="Only the workspace owner can modify an owner",
             )
 
-        if (
-            new_role == WorkspaceRole.OWNER
-            and actor_role != WorkspaceRole.OWNER
-        ):
+        if new_role == WorkspaceRole.OWNER and actor_role != WorkspaceRole.OWNER:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Only the workspace owner can assign ownership",
@@ -144,31 +137,22 @@ class WorkspaceService:
         actor_membership: WorkspaceMember,
         target_membership: WorkspaceMember,
     ) -> None:
-        if (
-            actor_membership.user_id
-            == target_membership.user_id
-        ):
+        if actor_membership.user_id == target_membership.user_id:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Use workspace deletion or leave the workspace instead",
             )
 
-        if (
-            actor_membership.role == WorkspaceRole.ADMIN
-            and target_membership.role
-            in {
-                WorkspaceRole.OWNER,
-                WorkspaceRole.ADMIN,
-            }
-        ):
+        if actor_membership.role == WorkspaceRole.ADMIN and target_membership.role in {
+            WorkspaceRole.OWNER,
+            WorkspaceRole.ADMIN,
+        }:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Admins cannot remove owners or other admins",
             )
 
-        if (
-            target_membership.role == WorkspaceRole.OWNER
-        ):
+        if target_membership.role == WorkspaceRole.OWNER:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="The workspace owner cannot be removed",

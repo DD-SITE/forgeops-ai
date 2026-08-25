@@ -1,32 +1,37 @@
-import pytest
+from collections.abc import AsyncGenerator
+
+import pytest_asyncio
 from sqlalchemy.ext.asyncio import (
     AsyncSession,
     async_sessionmaker,
     create_async_engine,
 )
 
-
 TEST_DATABASE_URL = (
     "postgresql+asyncpg://"
-    "forgeops:forgeops_dev_password@localhost:5433/forgeops_test"
+    "forgeops:forgeops_dev_password"
+    "@localhost:5433/forgeops_test"
 )
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def test_engine():
-    test_engine = create_async_engine(
+    engine = create_async_engine(
         TEST_DATABASE_URL,
         echo=False,
         pool_pre_ping=True,
     )
 
-    yield test_engine
+    try:
+        yield engine
+    finally:
+        await engine.dispose()
 
-    await test_engine.dispose()
 
-
-@pytest.fixture
-async def db_session(test_engine) -> AsyncSession:
+@pytest_asyncio.fixture
+async def db_session(
+    test_engine,
+) -> AsyncGenerator[AsyncSession, None]:
     session_factory = async_sessionmaker(
         bind=test_engine,
         class_=AsyncSession,

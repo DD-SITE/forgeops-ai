@@ -2,13 +2,15 @@ import { UserButton } from "@clerk/nextjs";
 import { auth } from "@clerk/nextjs/server";
 
 import { MeCard } from "./me-card";
+import { WorkspaceDocuments } from "./workspace-documents";
+
 
 export default async function DashboardPage() {
   const { userId } = await auth.protect();
 
   return (
     <main className="min-h-screen p-8">
-      <div className="mx-auto max-w-4xl">
+      <div className="mx-auto max-w-5xl">
         <div className="flex items-center justify-between border-b pb-4">
           <div>
             <p className="text-sm text-gray-500">
@@ -29,13 +31,15 @@ export default async function DashboardPage() {
           </h1>
 
           <p className="mt-3 text-gray-600">
-            Your authenticated ForgeOps identity.
+            Your authenticated engineering workspace.
           </p>
         </div>
 
         <div className="mt-8">
           <MeCard />
         </div>
+
+        <WorkspaceDocuments />
       </div>
     </main>
   );

@@ -12,7 +12,6 @@ from app.auth.rbac import (
 )
 from app.db.session import get_db_session
 from app.models.workspace_member import (
-    WorkspaceMember,
     WorkspaceRole,
 )
 from app.repositories.workspace_repository import (
@@ -26,7 +25,6 @@ from app.schemas.workspace import (
     WorkspaceRoleUpdate,
 )
 from app.services.workspace_service import WorkspaceService
-
 
 router = APIRouter(
     prefix="/workspaces",

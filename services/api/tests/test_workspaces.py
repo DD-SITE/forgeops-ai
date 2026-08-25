@@ -21,10 +21,7 @@ async def create_user(
 ) -> User:
     user = User(
         clerk_id=f"test_clerk_{uuid4().hex}",
-        email=(
-            f"{email_prefix}-{uuid4().hex[:8]}"
-            "@forgeops.local"
-        ),
+        email=(f"{email_prefix}-{uuid4().hex[:8]}@forgeops.local"),
         full_name=email_prefix,
     )
 
@@ -98,9 +95,7 @@ async def authenticate_as(user: User) -> None:
     async def override_current_user():
         return user
 
-    app.dependency_overrides[
-        get_current_user
-    ] = override_current_user
+    app.dependency_overrides[get_current_user] = override_current_user
 
 
 @pytest.mark.asyncio
@@ -239,8 +234,7 @@ async def test_admin_can_remove_member(
     await authenticate_as(admin)
 
     response = await client.delete(
-        f"/api/v1/workspaces/{workspace.id}"
-        f"/members/{member.id}",
+        f"/api/v1/workspaces/{workspace.id}/members/{member.id}",
     )
 
     assert response.status_code == 204
@@ -288,8 +282,7 @@ async def test_member_cannot_remove_another_member(
     await authenticate_as(member)
 
     response = await client.delete(
-        f"/api/v1/workspaces/{workspace.id}"
-        f"/members/{another_member.id}",
+        f"/api/v1/workspaces/{workspace.id}/members/{another_member.id}",
     )
 
     assert response.status_code == 403
@@ -337,8 +330,7 @@ async def test_admin_can_only_assign_member_role(
     await authenticate_as(admin)
 
     response = await client.patch(
-        f"/api/v1/workspaces/{workspace.id}"
-        f"/members/{member.id}/role",
+        f"/api/v1/workspaces/{workspace.id}/members/{member.id}/role",
         json={"role": "owner"},
     )
 
@@ -375,8 +367,7 @@ async def test_owner_can_transfer_ownership(
     await authenticate_as(owner)
 
     response = await client.post(
-        f"/api/v1/workspaces/{workspace.id}"
-        f"/transfer-ownership/{member.id}",
+        f"/api/v1/workspaces/{workspace.id}/transfer-ownership/{member.id}",
     )
 
     assert response.status_code == 200
