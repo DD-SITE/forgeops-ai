@@ -21,16 +21,6 @@ type Run = {
   actions: Action[];
 };
 
-type AgentEvent =
-  | {
-      type: "complete";
-      data: Run;
-    }
-  | {
-      type: "error";
-      message: string;
-    };
-
 export function WorkspaceAgent({
   workspaceId,
 }: {
@@ -195,8 +185,6 @@ export function WorkspaceAgent({
         errorData.message ??
           "Agent failed.",
       );
-
-      return;
     }
   }
 
