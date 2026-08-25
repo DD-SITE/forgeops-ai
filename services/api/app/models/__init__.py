@@ -27,4 +27,10 @@ __all__ = [
     "Workspace",
     "WorkspaceMember",
     "WorkspaceRole",
+    "AgentAction",
+    "AgentActionStatus",
+    "AgentRun",
+    "AgentRunStatus",
+    "AuditLog",
 ]
+from app.models.agent_run import AgentAction, AgentActionStatus, AgentRun, AgentRunStatus, AuditLog

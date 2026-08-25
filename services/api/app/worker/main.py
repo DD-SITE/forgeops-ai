@@ -67,14 +67,25 @@ class IngestionWorker:
         try:
             while self.running:
                 try:
-                    job_id = await self.queue.dequeue(
+                    message = await self.queue.dequeue(
                         settings.worker_poll_timeout_seconds,
                     )
 
-                    if job_id is None:
+                    if message is None:
                         continue
 
-                    await self.process_job(job_id)
+                    message_id, job_id = message
+
+                    try:
+                        await self.process_job(job_id)
+                    finally:
+                        try:
+                            await self.queue.ack(message_id)
+                        except Exception:
+                            logger.exception(
+                                "Failed to acknowledge Redis stream message %s",
+                                message_id,
+                            )
 
                 except asyncio.CancelledError:
                     raise

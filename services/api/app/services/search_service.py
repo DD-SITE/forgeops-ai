@@ -4,12 +4,8 @@ from fastapi import HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
-from app.ingestion.embeddings import (
-    EmbeddingService,
-)
-from app.repositories.search_repository import (
-    SearchRepository,
-)
+from app.ingestion.embeddings import EmbeddingService
+from app.repositories.search_repository import SearchRepository
 
 
 class SearchService:
@@ -18,13 +14,8 @@ class SearchService:
         session: AsyncSession,
         embedding_service: EmbeddingService,
     ) -> None:
-        self.repository = SearchRepository(
-            session
-        )
-
-        self.embedding_service = (
-            embedding_service
-        )
+        self.repository = SearchRepository(session)
+        self.embedding_service = embedding_service
 
     async def search(
         self,
@@ -42,32 +33,23 @@ class SearchService:
                 detail="Search query cannot be empty",
             )
 
-        query_embedding = (
-            self.embedding_service.embed_query(
-                normalized_query
-            )
-        )
+        query_embedding = self.embedding_service.embed_query(normalized_query)
 
-        if (
-            len(query_embedding)
-            != settings.embedding_dimension
-        ):
+        if len(query_embedding) != settings.embedding_dimension:
             raise RuntimeError(
-                "Query embedding dimension does not "
-                "match the configured vector dimension."
+                "Query embedding dimension does not match the configured vector dimension."
             )
 
-        results = (
-            await self.repository.semantic_search(
-                workspace_id=workspace_id,
-                query_embedding=query_embedding,
-                top_k=top_k,
-            )
+        results = await self.repository.hybrid_search(
+            workspace_id=workspace_id,
+            query_embedding=query_embedding,
+            query=normalized_query,
+            top_k=top_k,
+            candidate_k=max(top_k, settings.agent_max_retrieval_candidates),
         )
 
         return [
             result
             for result in results
-            if result["similarity"]
-            >= min_similarity
+            if result["similarity"] >= min_similarity or result.get("keyword_score", 0.0) > 0
         ]

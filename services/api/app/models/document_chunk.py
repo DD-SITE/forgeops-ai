@@ -4,6 +4,7 @@ from uuid import UUID, uuid4
 from pgvector.sqlalchemy import VECTOR
 from sqlalchemy import (
     DateTime,
+    Computed,
     ForeignKey,
     Index,
     Integer,
@@ -13,7 +14,7 @@ from sqlalchemy import (
     UniqueConstraint,
     func,
 )
-from sqlalchemy.dialects.postgresql import UUID as PGUUID
+from sqlalchemy.dialects.postgresql import UUID as PGUUID, TSVECTOR
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
@@ -100,6 +101,12 @@ class DocumentChunk(Base):
     embedding: Mapped[list[float]] = mapped_column(
         VECTOR(EMBEDDING_DIMENSION),
         nullable=False,
+    )
+
+    search_vector: Mapped[object | None] = mapped_column(
+        TSVECTOR(),
+        Computed("to_tsvector('english', content)", persisted=True),
+        nullable=True,
     )
 
     created_at: Mapped[datetime] = mapped_column(

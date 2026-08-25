@@ -29,65 +29,49 @@ class AskService:
         min_similarity: float,
     ) -> dict:
         normalized_query = query.strip()
-
         if not normalized_query:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Question cannot be empty",
             )
 
-        query_embedding = (
-            self.embedding_service.embed_query(
-                normalized_query
-            )
-        )
-
+        query_embedding = self.embedding_service.embed_query(normalized_query)
         if len(query_embedding) != settings.embedding_dimension:
             raise RuntimeError(
-                "Query embedding dimension does not "
-                "match the configured vector dimension."
+                "Query embedding dimension does not match the configured vector dimension."
             )
 
-        results = await self.repository.semantic_search(
+        results = await self.repository.hybrid_search(
             workspace_id=workspace_id,
             query_embedding=query_embedding,
+            query=normalized_query,
             top_k=top_k,
+            candidate_k=max(top_k, settings.agent_max_retrieval_candidates),
         )
-
         results = [
             result
             for result in results
             if result["similarity"] >= min_similarity
+            or result.get("keyword_score", 0.0) > 0
         ]
 
         if not results:
             return {
                 "query": normalized_query,
                 "answer": (
-                    "The available documents do not contain "
-                    "enough information to answer this question."
+                    "The available documents do not contain enough information to answer this question."
                 ),
                 "sources": [],
             }
 
-        context_parts = []
-
-        for index, result in enumerate(results, start=1):
-            source = result["document_name"]
-
-            section = result.get("section_path")
-            if section:
-                source += f" — {' > '.join(section)}"
-
-            context_parts.append(
-                f"""SOURCE {index}
-Document: {source}
+        context = "\n\n".join(
+            f"""SOURCE {index}
+Document: {result["document_name"]}
+Section: {" > ".join(result["section_path"] or [])}
 Content:
-{result["content"]}
-"""
-            )
-
-        context = "\n".join(context_parts)
+{result["content"]}"""
+            for index, result in enumerate(results, start=1)
+        )
 
         answer = await self.gemini_service.generate_answer(
             query=normalized_query,

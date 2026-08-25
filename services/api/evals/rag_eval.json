@@ -1,0 +1,12 @@
+[
+  {
+    "id": "retrieval-001",
+    "question": "Which database and vector extension does ForgeOps use for semantic retrieval?",
+    "expected_terms": ["PostgreSQL", "pgvector"]
+  },
+  {
+    "id": "retrieval-002",
+    "question": "Which object storage service is used for uploaded documents?",
+    "expected_terms": ["MinIO", "S3"]
+  }
+]

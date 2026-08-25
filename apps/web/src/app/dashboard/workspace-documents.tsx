@@ -8,6 +8,7 @@ import {
 
 import { useApiClient } from "@/lib/api";
 import { WorkspaceSearch } from "./workspace-search";
+import { WorkspaceAgent } from "./workspace-agent";
 
 
 type Workspace = {
@@ -370,6 +371,11 @@ export function WorkspaceDocuments() {
         />
       )}
 
+
+      {/* Agentic copilot */}
+      {selectedWorkspaceId && (
+        <WorkspaceAgent workspaceId={selectedWorkspaceId} />
+      )}
 
       {/* Document upload */}
       {selectedWorkspaceId && (

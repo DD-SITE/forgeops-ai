@@ -18,6 +18,7 @@ class Settings(BaseSettings):
     clerk_authorized_parties: str = "http://localhost:3000"
 
     s3_endpoint: str
+    s3_public_endpoint: str = "http://localhost:9000"
     s3_region: str = "us-east-1"
     s3_access_key: str
     s3_secret_key: str
@@ -30,7 +31,7 @@ class Settings(BaseSettings):
     embedding_dimension: int = 384
 
     gemini_api_key: str
-    gemini_model: str = "gemini-3.6-flash"
+    gemini_model: str = "gemini-3.7-flash"
 
     ingestion_queue_name: str = "forgeops:ingestion"
     worker_poll_timeout_seconds: int = 5
@@ -39,6 +40,34 @@ class Settings(BaseSettings):
     worker_max_attempts: int = 3
     worker_retry_base_delay_seconds: int = 10
     worker_chunk_batch_size: int = 64
+
+    # Agent / workflow runtime
+    agent_model: str = "gemini-3.7-flash"
+    agent_max_retrieval_candidates: int = 30
+    agent_max_context_chunks: int = 8
+    agent_thread_ttl_hours: int = 168
+    langgraph_aes_key: str | None = None
+
+    # GitHub action tool
+    github_token: str | None = None
+    github_api_base_url: str = "https://api.github.com"
+    github_default_repository: str | None = None
+
+    # Incident API tool
+    incident_api_url: str | None = None
+    incident_api_token: str | None = None
+
+    # API hardening
+    rate_limit_requests: int = 120
+    rate_limit_window_seconds: int = 60
+
+    # Optional observability
+    otel_enabled: bool = False
+    otel_service_name: str = "forgeops-api"
+    otel_exporter_otlp_endpoint: str | None = None
+    sentry_dsn: str | None = None
+    langsmith_tracing: bool = False
+    langsmith_api_key: str | None = None
 
     model_config = SettingsConfigDict(
         env_file="../../.env",
